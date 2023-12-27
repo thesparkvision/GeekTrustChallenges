@@ -160,7 +160,6 @@ class StationRepository:
         discount_amount = 0
         check_in_count = metro_card.current_check_in_logs_count
         if check_in_count > 0 and check_in_count % 2 != 0:
-            #print(user_station.name, passenger_type, metro_card.id, "ink")
             discount_amount = int(total_amount * RETURN_JOURNEY_DISCOUNT_PERCENT)
         total_amount = total_amount - discount_amount
 
@@ -181,16 +180,6 @@ class StationRepository:
             passenger_type=passenger_type,
             discount_amount=discount_amount
         )
-        print(
-            user_station.name, 
-            metro_card.id,
-            travel_charge,
-            extra_balance_required, 
-            total_amount_collected, 
-            passenger_type, 
-            discount_amount,
-            metro_card.get_balance_amount()
-        )
 
         check_in = CheckIn(
             metro_card_id = metro_card.id, 
@@ -201,5 +190,4 @@ class StationRepository:
             recharge_service_charge = recharge_service_charge,
             discount_amount = discount_amount,
         )
-
         metro_card.add_check_in_log(check_in)
