@@ -2,7 +2,9 @@ from typing import List
 from datetime import date, datetime
 from enum import Enum
 
-from .schemas import Program, ProgramWebsite, ProgramCategory
+from src.schemas.program import Program
+from src.schemas.program_website import ProgramWebsite
+from src.schemas.program_category import ProgramCategory
 
 class ProgramNames(Enum):
     CERTIFICATION = "CERTIFICATION"
@@ -28,7 +30,7 @@ class Solution(object):
             if "ADD_PROGRAMME" in line:
                 _, category, quantity = line.split(" ")
                 program_category = self.program_categories[category]
-                program = Program(program_category, quantity)
+                program = Program(program_category, int(quantity))
                 self.program_website.add_program_to_cart(program)
 
             elif "APPLY_COUPON" in line:
