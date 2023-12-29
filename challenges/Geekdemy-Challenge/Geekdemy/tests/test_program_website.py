@@ -1,5 +1,6 @@
 from unittest import TestCase
 from unittest.mock import patch
+
 from src.schemas.program_category import ProgramCategory
 from src.schemas.program import Program
 from src.schemas.program_website import ProgramWebsite
@@ -104,7 +105,7 @@ class TestProgramWebsite(TestCase):
 
         cost, discount = program_website.find_program_cost_details(program)
 
-        self.assertEqual(cost, 2400)  # 20% discount applied
+        self.assertEqual(cost, 2400)
         self.assertEqual(discount, 600) 
 
     def test_find_lowest_valued_program(self):
@@ -147,6 +148,7 @@ class TestProgramWebsite(TestCase):
 
     def test_buy_programs_in_cart(self):
         self.program_website.add_program_to_cart(self.program)
-        # self.program_website.apply_enrollment_fee_if_any = lambda x: (x, 0)
+        self.program_website.add_pro_membership()
+        self.program_website.apply_coupon("DEAL_G5")
         result = self.program_website.buy_programs_in_cart()
         self.assertIsInstance(result, Bill)
