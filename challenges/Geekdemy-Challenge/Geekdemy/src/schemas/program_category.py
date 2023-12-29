@@ -11,4 +11,4 @@ class ProgramCategory:
         return self._cost
 
     def get_discount(self) -> float:
-        return self._discount
+        return self._cost * self._discount

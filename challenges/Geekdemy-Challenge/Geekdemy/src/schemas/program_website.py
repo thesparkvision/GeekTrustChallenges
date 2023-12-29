@@ -70,11 +70,19 @@ class ProgramWebsite:
         return applicable_coupon
 
     def find_lowest_valued_program(self, sub_total_cost) -> Program:
-        return min(self.programs_in_cart, key = lambda program: program.get_category().get_cost())
+        program_details = []
+        for program in self.programs_in_cart:
+            program_category = program.get_category()
+            program_cost = program_category.get_cost()
+            program_details.append((program, program_cost))
+
+        min_program_detail = min(program_details, key = lambda program_detail: program_detail[1])
+        return min_program_detail[0]
 
     def apply_B4G1_coupon(self, sub_total_cost: float) -> (float, float):
         program = self.find_lowest_valued_program(sub_total_cost)
-        discount = program.get_category().get_cost()
+        program_category = program.get_category()
+        discount = program_category.get_cost()
         return sub_total_cost - discount, discount
 
     def apply_DEAL_G20_coupon(self, sub_total_cost: float) -> (float, float):
@@ -89,7 +97,7 @@ class ProgramWebsite:
 
     def apply_coupon_discount_if_any(self, sub_total_cost, applicable_coupon):
         if not applicable_coupon:
-            return sub_total_cost
+            return sub_total_cost, 0.0
         
         calculate_new_cost_details: Callable[[float], Tuple[float, float]] = None
         match applicable_coupon:

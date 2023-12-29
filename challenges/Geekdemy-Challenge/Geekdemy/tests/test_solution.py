@@ -1,41 +1,55 @@
-from unittest import TestCase, mock
+from unittest import TestCase
+from unittest.mock import patch, MagicMock
 from datetime import date
-import io
-
-from src.solution import Solution
+from src.schemas.program import Program
+from src.schemas.program_category import ProgramCategory
+from src.schemas.program_website import ProgramWebsite
+from src.solution import Solution, ProgramNames
 
 class TestSolution(TestCase):
 
     def setUp(self):
         self.input_lines = [
-            "BALANCE 1 100",
-            "CHECK_IN 1 ADULT AIRPORT"
+            "ADD_PROGRAMME CERTIFICATION 2",
+            "ADD_PROGRAMME DIPLOMA 1",
+            "APPLY_COUPON DEAL_G20",
+            "ADD_PRO_MEMBERSHIP"
         ]
 
-    def test_process_input(self):
-        solution_instance = Solution(self.input_lines)
-        solution_instance.process_input()
+        self.program_categories = {
+            "DIPLOMA": ProgramCategory("DIPLOMA", 2500, 0.1),
+            "CERTIFICATION": ProgramCategory("CERTIFICATION", 3000, 0.2),
+            "DEGREE": ProgramCategory("DEGREE", 5000, 0.5)
+        }
 
-    def test_process_output(self):
-        solution_instance = Solution(self.input_lines)
-        solution_instance.process_input()
+        self.program = Program(category=self.program_categories["DIPLOMA"], quantity=1)
 
-        solution_instance.process_output()
+    @patch('src.solution.ProgramWebsite')
+    def test_process_input(self, mock_program_website):
+        solution = Solution(self.input_lines)
+        solution.process_input()
 
-    def test_print_output(self):
-        solution_instance = Solution(self.input_lines)
-        solution_instance.process_input()
-        solution_instance.process_output()
+        self.assertEqual(mock_program_website.return_value.add_program_to_cart.call_count, 2)
+        mock_program_website.return_value.apply_coupon.assert_called_with('DEAL_G20')
+        self.assertEqual(mock_program_website.return_value.add_pro_membership.call_count, 1)
 
-        with mock.patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
-            solution_instance.print_output()
+    @patch('src.solution.ProgramWebsite')
+    def test_process_output(self, mock_program_website):
+        solution = Solution(self.input_lines)
+        solution.process_input()
+        solution.process_output()
 
-        expected_output = [
-            "TOTAL_COLLECTION CENTRAL 0 0",
-            "PASSENGER_TYPE_SUMMARY",
-            "TOTAL_COLLECTION AIRPORT 202 0",
-            "PASSENGER_TYPE_SUMMARY",
-            "ADULT 1"
-        ]
-        expected_output = "\n".join(expected_output)
-        self.assertEqual(mock_stdout.getvalue().strip(), expected_output)
+        mock_program_website.return_value.buy_programs_in_cart.assert_called_once()
+
+    @patch('src.solution.ProgramWebsite')
+    def test_print_output(self, mock_program_website):
+        mock_bill = MagicMock()
+        mock_bill.print_receipt.return_value = None
+
+        solution = Solution(self.input_lines)
+        solution.process_input()
+        solution.process_output()
+        solution.print_output()
+
+        mock_program_website.return_value.buy_programs_in_cart.assert_called_once()
+        mock_program_website.return_value.buy_programs_in_cart.return_value.print_receipt.assert_called_once()
