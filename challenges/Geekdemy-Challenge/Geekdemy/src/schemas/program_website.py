@@ -100,14 +100,14 @@ class ProgramWebsite:
             return sub_total_cost, 0.0
         
         calculate_new_cost_details: Callable[[float], Tuple[float, float]] = None
-        match applicable_coupon:
-            case "B4G1":
-                calculate_new_cost_details = self.apply_B4G1_coupon
-            case "DEAL_G20":
-                calculate_new_cost_details = self.apply_DEAL_G20_coupon
-            case "DEAL_G5":
-                calculate_new_cost_details = self.apply_DEAL_G5_coupon
         
+        apply_coupon_functions_mapping = {
+            "B4G1": self.apply_B4G1_coupon,
+            "DEAL_G20": self.apply_DEAL_G20_coupon,
+            "DEAL_G5": self.apply_DEAL_G5_coupon
+        }
+        calculate_new_cost_details = apply_coupon_functions_mapping.get(applicable_coupon)
+
         return calculate_new_cost_details(sub_total_cost)
 
     def buy_programs_in_cart(self) -> Bill:
