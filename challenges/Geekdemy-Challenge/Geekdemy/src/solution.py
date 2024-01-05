@@ -16,12 +16,18 @@ class Solution(object):
     def __init__(self, input_lines: List[str]) -> None:
         self.input_lines = input_lines
         self.program_categories = {
-            "DIPLOMA": ProgramCategory("DIPLOMA", 2500, 0.1),
-            "CERTIFICATION": ProgramCategory("CERTIFICATION", 3000, 0.2),
-            "DEGREE": ProgramCategory("DEGREE", 5000, 0.5)
+            "DIPLOMA": ProgramCategory("DIPLOMA", 2500, 0.01),
+            "CERTIFICATION": ProgramCategory("CERTIFICATION", 3000, 0.02),
+            "DEGREE": ProgramCategory("DEGREE", 5000, 0.03)
         }
         self.program_website = ProgramWebsite()
         self.bill = None
+
+    def add_program(self, category: str, quantity: int):
+        program_category = self.program_categories[category]
+        for _ in range(quantity):
+            program = Program(program_category)
+            self.program_website.add_program_to_cart(program)
 
     def process_input(self) -> None:        
         for line in self.input_lines:
@@ -29,9 +35,7 @@ class Solution(object):
             
             if "ADD_PROGRAMME" in line:
                 _, category, quantity = line.split(" ")
-                program_category = self.program_categories[category]
-                program = Program(program_category, int(quantity))
-                self.program_website.add_program_to_cart(program)
+                self.add_program(category, int(quantity))
 
             elif "APPLY_COUPON" in line:
                 _, coupon_code = line.split(" ")

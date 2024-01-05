@@ -1,8 +1,8 @@
 class ProgramCategory:
-    def __init__(self, name: str, cost: float, discount: float):
+    def __init__(self, name: str, cost: float, pro_discount: float):
         self._name: str = name
         self._cost: float = cost
-        self._discount: float = discount
+        self._pro_discount: float = pro_discount
     
     def get_name(self) -> str:
         return self._name
@@ -10,5 +10,5 @@ class ProgramCategory:
     def get_cost(self) -> float:
         return self._cost
 
-    def get_discount(self) -> float:
-        return self._cost * self._discount
+    def get_pro_discount(self) -> float:
+        return self._cost * self._pro_discount

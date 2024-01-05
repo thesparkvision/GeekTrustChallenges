@@ -3,7 +3,7 @@ from typing import List, Union, Callable, Tuple
 from .bill import Bill
 from .program import Program
 
-ENROLLEMENT_FEE_RULE_AMOUNT = 6666
+ENROLLMENT_FEE_RULE_AMOUNT = 6666
 ENROLLMENT_FEE_CHARGE = 500
 PRO_MEMBERSHIP_FEE_CHARGE = 200
 AVAILABLE_COUPONS = {"DEAL_G20", "DEAL_G5"}
@@ -11,9 +11,12 @@ AVAILABLE_COUPONS = {"DEAL_G20", "DEAL_G5"}
 class ProgramWebsite:
     def __init__(self):
         self.programs_in_cart: List[Program] = []
-        self.total_programs_count: int = 0
         self.user_applied_coupons: List[str] = []
         self.is_pro_membership_taken: bool = False
+    
+    @property
+    def total_programs_in_cart(self) -> int:
+        return len(self.programs_in_cart)
 
     def add_program_to_cart(self, program: Program) -> None:
         self.programs_in_cart.append(program)
@@ -33,9 +36,7 @@ class ProgramWebsite:
         pro_discount: float = 0.0
         
         if self.is_pro_membership_taken:
-            pro_discount = program_category.get_discount()
-            program_cost -= pro_discount
-
+            pro_discount = program_category.get_pro_discount()
         return program_cost, pro_discount
 
     def find_sub_total_cost_details(self) -> (float, float):
@@ -44,27 +45,30 @@ class ProgramWebsite:
 
         for program in self.programs_in_cart:
             program_cost, pro_discount = self.find_program_cost_details(program)
-            total_pro_discount += total_pro_discount
-            program_quantity = program.get_quantity()
-            sub_total_cost += program_cost * program_quantity
-            self.total_programs_count += program_quantity
+            total_pro_discount += pro_discount
+            sub_total_cost += program_cost 
+            
+        if self.is_pro_membership_taken:
+            sub_total_cost += PRO_MEMBERSHIP_FEE_CHARGE
+
+        sub_total_cost = sub_total_cost - total_pro_discount
 
         return sub_total_cost, total_pro_discount
 
     def apply_enrollment_fee_if_any(self, amount: float) -> (float, float):
         enrollment_fee: float = 0
-        if amount < ENROLLEMENT_FEE_RULE_AMOUNT:
+        if amount < ENROLLMENT_FEE_RULE_AMOUNT:
             enrollment_fee = ENROLLMENT_FEE_CHARGE
         return amount + enrollment_fee, enrollment_fee
 
     def find_applicable_coupon(self, sub_total_cost: float) -> Union[str, None]:
         applicable_coupon: Union[str, None] = None
 
-        if self.total_programs_count >= 4:
+        if self.total_programs_in_cart >= 4:
             applicable_coupon = "B4G1"
         elif sub_total_cost >= 10000.0 and "DEAL_G20" in self.user_applied_coupons:
             applicable_coupon = "DEAL_G20"
-        elif self.total_programs_count >= 2 and "DEAL_G5" in self.user_applied_coupons:
+        elif self.total_programs_in_cart >= 2 and "DEAL_G5" in self.user_applied_coupons:
             applicable_coupon = "DEAL_G5"
         
         return applicable_coupon
@@ -82,11 +86,14 @@ class ProgramWebsite:
     def apply_B4G1_coupon(self, sub_total_cost: float) -> (float, float):
         program = self.find_lowest_valued_program(sub_total_cost)
         program_category = program.get_category()
-        discount = program_category.get_cost()
+        program_cost = program_category.get_cost()
+        if self.is_pro_membership_taken:
+            program_cost = program_cost - program_category.get_pro_discount()
+        discount = program_cost
         return sub_total_cost - discount, discount
 
     def apply_DEAL_G20_coupon(self, sub_total_cost: float) -> (float, float):
-        discount_percent = 0.2
+        discount_percent = 0.20
         discount = sub_total_cost * discount_percent
         return sub_total_cost - discount, discount
 

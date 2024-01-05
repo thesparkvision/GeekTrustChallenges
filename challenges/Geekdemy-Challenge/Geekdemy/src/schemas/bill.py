@@ -22,7 +22,7 @@ class Bill:
         self.enrollment_fee_taken = enrollment_fee
 
     def get_total_amount_paid(self) -> float:
-        return self.sub_total_amount - self.coupon_discount 
+        return self.sub_total_amount + self.enrollment_fee_taken - self.coupon_discount 
 
     def print_receipt(self) -> None:
         print(f"SUB_TOTAL {self.sub_total_amount:.2f}")

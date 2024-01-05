@@ -22,14 +22,14 @@ class TestSolution(TestCase):
             "DEGREE": ProgramCategory("DEGREE", 5000, 0.5)
         }
 
-        self.program = Program(category=self.program_categories["DIPLOMA"], quantity=1)
+        self.program = Program(category=self.program_categories["DIPLOMA"])
 
     @patch('src.solution.ProgramWebsite')
     def test_process_input(self, mock_program_website):
         solution = Solution(self.input_lines)
         solution.process_input()
 
-        self.assertEqual(mock_program_website.return_value.add_program_to_cart.call_count, 2)
+        self.assertEqual(mock_program_website.return_value.add_program_to_cart.call_count, 3)
         mock_program_website.return_value.apply_coupon.assert_called_with('DEAL_G20')
         self.assertEqual(mock_program_website.return_value.add_pro_membership.call_count, 1)
 

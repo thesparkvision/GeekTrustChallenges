@@ -47,4 +47,4 @@ class TestBill(TestCase):
         mock_print.assert_any_call("TOTAL_PRO_DISCOUNT 40.00")
         mock_print.assert_any_call("PRO_MEMBERSHIP_FEE 200.00")
         mock_print.assert_any_call("ENROLLMENT_FEE 500.00")
-        mock_print.assert_any_call("TOTAL 990.00")
+        mock_print.assert_any_call("TOTAL 1490.00")
