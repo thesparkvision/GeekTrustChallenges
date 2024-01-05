@@ -2,18 +2,22 @@ from typing import List, Union, Callable, Tuple
 
 from .bill import Bill
 from .program import Program
+from .coupon import Coupon
 
-ENROLLMENT_FEE_RULE_AMOUNT = 6666
-ENROLLMENT_FEE_CHARGE = 500
-PRO_MEMBERSHIP_FEE_CHARGE = 200
-AVAILABLE_COUPONS = {"DEAL_G20", "DEAL_G5"}
+from src.constants import CouponCode, ENROLLMENT_FEE_CHARGE, ENROLLMENT_FEE_RULE_AMOUNT, PRO_MEMBERSHIP_FEE_CHARGE, B4G1_coupon, DEAL_G20_coupon, DEAL_G5_coupon, DEAL_G20_COUPON_DISCOUNT_PERCENT, DEAL_G5_COUPON_DISCOUNT_PERCENT
 
 class ProgramWebsite:
     def __init__(self):
         self.programs_in_cart: List[Program] = []
         self.user_applied_coupons: List[str] = []
         self.is_pro_membership_taken: bool = False
-    
+
+        self.available_coupons = {
+            CouponCode.B4G1.value: B4G1_coupon,
+            CouponCode.DEAL_G20.value: DEAL_G20_coupon,
+            CouponCode.DEAL_G5.value: DEAL_G5_coupon
+        }
+
     @property
     def total_programs_in_cart(self) -> int:
         return len(self.programs_in_cart)
@@ -22,7 +26,7 @@ class ProgramWebsite:
         self.programs_in_cart.append(program)
     
     def apply_coupon(self, coupon_code: str) -> None:
-        if coupon_code not in AVAILABLE_COUPONS:
+        if coupon_code not in self.available_coupons:
             raise Exception("Not a valid Coupon Code!")
         self.user_applied_coupons.append(coupon_code)
 
@@ -56,21 +60,30 @@ class ProgramWebsite:
         return sub_total_cost, total_pro_discount
 
     def apply_enrollment_fee_if_any(self, amount: float) -> (float, float):
-        enrollment_fee: float = 0
+        enrollment_fee: float = 0.0
         if amount < ENROLLMENT_FEE_RULE_AMOUNT:
             enrollment_fee = ENROLLMENT_FEE_CHARGE
         return amount + enrollment_fee, enrollment_fee
 
-    def find_applicable_coupon(self, sub_total_cost: float) -> Union[str, None]:
+    def is_applicable_coupon(self, sub_total_cost: float, coupon: Coupon) -> bool:
+        if coupon.is_explicitly_required() and coupon.name not in self.user_applied_coupons:
+            return False
+        if self.total_programs_in_cart < coupon.get_minimum_programs_count_for_applying():
+            return False
+        if sub_total_cost < coupon.get_minimum_amount_for_applying():
+            return False
+        return True
+        
+    def find_applicable_coupon(self, sub_total_cost: float) -> Union[Coupon, None]:
         applicable_coupon: Union[str, None] = None
 
-        if self.total_programs_in_cart >= 4:
-            applicable_coupon = "B4G1"
-        elif sub_total_cost >= 10000.0 and "DEAL_G20" in self.user_applied_coupons:
-            applicable_coupon = "DEAL_G20"
-        elif self.total_programs_in_cart >= 2 and "DEAL_G5" in self.user_applied_coupons:
-            applicable_coupon = "DEAL_G5"
-        
+        if self.is_applicable_coupon(sub_total_cost, B4G1_coupon):
+            applicable_coupon = B4G1_coupon
+        elif self.is_applicable_coupon(sub_total_cost, DEAL_G20_coupon):
+            applicable_coupon = DEAL_G20_coupon
+        elif self.is_applicable_coupon(sub_total_cost, DEAL_G5_coupon):
+            applicable_coupon = DEAL_G5_coupon
+
         return applicable_coupon
 
     def find_lowest_valued_program(self, sub_total_cost) -> Program:
@@ -93,27 +106,27 @@ class ProgramWebsite:
         return sub_total_cost - discount, discount
 
     def apply_DEAL_G20_coupon(self, sub_total_cost: float) -> (float, float):
-        discount_percent = 0.20
+        discount_percent = DEAL_G20_COUPON_DISCOUNT_PERCENT
         discount = sub_total_cost * discount_percent
         return sub_total_cost - discount, discount
 
     def apply_DEAL_G5_coupon(self, sub_total_cost: float) -> (float, float):
-        discount_percent = 0.05
+        discount_percent = DEAL_G5_COUPON_DISCOUNT_PERCENT
         discount = sub_total_cost * discount_percent
         return sub_total_cost - discount , discount
 
-    def apply_coupon_discount_if_any(self, sub_total_cost, applicable_coupon):
+    def apply_coupon_discount_if_any(self, sub_total_cost: float, applicable_coupon: Coupon) -> (float, float):
         if not applicable_coupon:
             return sub_total_cost, 0.0
         
         calculate_new_cost_details: Callable[[float], Tuple[float, float]] = None
         
         apply_coupon_functions_mapping = {
-            "B4G1": self.apply_B4G1_coupon,
-            "DEAL_G20": self.apply_DEAL_G20_coupon,
-            "DEAL_G5": self.apply_DEAL_G5_coupon
+            CouponCode.B4G1.value: self.apply_B4G1_coupon,
+            CouponCode.DEAL_G20.value: self.apply_DEAL_G20_coupon,
+            CouponCode.DEAL_G5.value: self.apply_DEAL_G5_coupon
         }
-        calculate_new_cost_details = apply_coupon_functions_mapping.get(applicable_coupon)
+        calculate_new_cost_details = apply_coupon_functions_mapping.get(applicable_coupon.name)
 
         return calculate_new_cost_details(sub_total_cost)
 
@@ -129,7 +142,7 @@ class ProgramWebsite:
         applicable_coupon = self.find_applicable_coupon(sub_total_cost)
         total_cost, coupon_discount = self.apply_coupon_discount_if_any(sub_total_cost, applicable_coupon)
         if applicable_coupon:
-            bill.update_coupon_details(applicable_coupon, coupon_discount)
+            bill.update_coupon_details(applicable_coupon.name, coupon_discount)
 
         total_cost, enrollment_fee = self.apply_enrollment_fee_if_any(total_cost)
         bill.update_enrollment_fee(enrollment_fee)

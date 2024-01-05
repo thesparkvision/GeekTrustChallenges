@@ -6,6 +6,8 @@ from src.schemas.program import Program
 from src.schemas.program_website import ProgramWebsite
 from src.schemas.bill import Bill
 
+from src.constants import B4G1_coupon, DEAL_G20_coupon, DEAL_G5_coupon
+
 class TestProgramWebsite(TestCase):
 
     def setUp(self):
@@ -67,15 +69,17 @@ class TestProgramWebsite(TestCase):
             program = Program(category=self.program_category)
             self.program_website.add_program_to_cart(program)
         self.program_website.user_applied_coupons = {"DEAL_G20", "DEAL_G5"}
-        result = self.program_website.find_applicable_coupon(sub_total_cost=500.0)
-        self.assertEqual(result, "B4G1")
+        result_coupon = self.program_website.find_applicable_coupon(sub_total_cost=500.0)
+        self.assertIsNotNone(result_coupon)
+        self.assertEqual(result_coupon.name, B4G1_coupon.name)
 
     def test_find_applicable_coupon_DEAL_G20(self):
         # If total_programs_count is less than 4 but sub_total_cost is >= 10000 and "DEAL_G20" applied, "DEAL_G20" should be applicable
         self.program_website.user_applied_coupons = {"DEAL_G20", "DEAL_G5"}
         self.program_website.total_programs_count = 3
-        result = self.program_website.find_applicable_coupon(sub_total_cost=12000.0)
-        self.assertEqual(result, "DEAL_G20")
+        result_coupon = self.program_website.find_applicable_coupon(sub_total_cost=12000.0)
+        self.assertIsNotNone(result_coupon)
+        self.assertEqual(result_coupon.name, DEAL_G20_coupon.name)
 
     def test_find_applicable_coupon_DEAL_G5(self):
         # If total_programs_count is less than 4, sub_total_cost is < 10000, and "DEAL_G5" applied, "DEAL_G5" should be applicable
@@ -83,8 +87,9 @@ class TestProgramWebsite(TestCase):
             program = Program(category=self.program_category)
             self.program_website.add_program_to_cart(program)
         self.program_website.user_applied_coupons = {"DEAL_G20", "DEAL_G5"}
-        result = self.program_website.find_applicable_coupon(sub_total_cost=8000.0)
-        self.assertEqual(result, "DEAL_G5")
+        result_coupon = self.program_website.find_applicable_coupon(sub_total_cost=8000.0)
+        self.assertIsNotNone(result_coupon)
+        self.assertEqual(result_coupon.name, DEAL_G5_coupon.name)
 
     def test_find_applicable_coupon_none(self):
         # If none of the conditions are met, no coupon should be applicable
@@ -122,8 +127,8 @@ class TestProgramWebsite(TestCase):
     @patch('src.schemas.program_website.ProgramWebsite.apply_B4G1_coupon')
     def test_apply_coupon_discount_if_any_B4G1(self, mock_apply_B4G1_coupon):
         sub_total_cost = 500.0
-        self.program_website.find_applicable_coupon = lambda x: "B4G1"
-        result = self.program_website.apply_coupon_discount_if_any(sub_total_cost, applicable_coupon="B4G1")
+        applicable_coupon = B4G1_coupon
+        result = self.program_website.apply_coupon_discount_if_any(sub_total_cost, applicable_coupon)
         mock_apply_B4G1_coupon.assert_called_with(sub_total_cost)
         self.assertEqual(result, mock_apply_B4G1_coupon.return_value)
 
@@ -138,16 +143,16 @@ class TestProgramWebsite(TestCase):
     @patch('src.schemas.program_website.ProgramWebsite.apply_DEAL_G20_coupon')
     def test_apply_coupon_discount_if_any_DEAL_G20(self, mock_apply_DEAL_G20_coupon):
         sub_total_cost = 1000.0
-        self.program_website.find_applicable_coupon = lambda x: "DEAL_G20"
-        result = self.program_website.apply_coupon_discount_if_any(sub_total_cost, applicable_coupon="DEAL_G20")
+        applicable_coupon = DEAL_G20_coupon
+        result = self.program_website.apply_coupon_discount_if_any(sub_total_cost, applicable_coupon)
         mock_apply_DEAL_G20_coupon.assert_called_with(sub_total_cost)
         self.assertEqual(result, mock_apply_DEAL_G20_coupon.return_value)
 
     @patch('src.schemas.program_website.ProgramWebsite.apply_DEAL_G5_coupon')
     def test_apply_coupon_discount_if_any_DEAL_G5(self, mock_apply_DEAL_G5_coupon):
         sub_total_cost = 300.0
-        self.program_website.find_applicable_coupon = lambda x: "DEAL_G5"
-        result = self.program_website.apply_coupon_discount_if_any(sub_total_cost, applicable_coupon="DEAL_G5")
+        applicable_coupon = DEAL_G5_coupon
+        result = self.program_website.apply_coupon_discount_if_any(sub_total_cost, applicable_coupon)
         mock_apply_DEAL_G5_coupon.assert_called_with(sub_total_cost)
         self.assertEqual(result, mock_apply_DEAL_G5_coupon.return_value)
 
